@@ -1,0 +1,70 @@
+---
+- hosts: default
+  gather_facts: false
+  vars:
+    bamboo:    atlassian-bamboo
+    bamboover: 5.3
+    dlpath:    software/bamboo/downloads/binary
+    tmp:       /var/tmp
+    installto: /srv
+    dbuser:    bamboouser
+    dbpass:    bamb00p4ss
+
+  tasks:
+    - name: Ensure libselinux-python installed
+      yum:  name=libselinux-python state=present
+
+    - name: Ensure EPEL RPM installed
+      yum:
+        name=http://dl.fedoraproject.org/pub/epel/6/x86_64/epel-release-6-8.noarch.rpm
+        state=present
+
+    # You don't need this - it's because I can't type anything other than 'l'
+    - name: Ensure aliases.sh present
+      copy: src=files/aliases.sh dest=/etc/profile.d/aliases.sh
+            owner=root group=root mode=0644
+
+    - name: Ensure Java and MySQL packages are installed
+      yum:  name={{ item }} state=installed
+      with_items:
+        - mysql-server
+        - java-1.7.0-openjdk
+        - mysql-connector-java
+        - MySQL-python
+        - git
+
+    - name: Ensure mysql server running
+      service: name=mysqld state=started
+
+    - name: Fetch Bamboo install
+      get_url:
+        url=http://www.atlassian.com/{{ dlpath }}/{{ bamboo }}-{{ bamboover }}.tar.gz
+        dest={{ tmp }}/bamboo.tgz
+      register: fetch
+
+    - name: Extract Bamboo installation
+      shell: "tar xzf {{ tmp }}/bamboo.tgz -C {{ installto }}"
+      when: fetch.changed
+
+    - name: Set Bamboo home
+      lineinfile:
+        dest={{ installto }}/{{ bamboo }}-{{ bamboover }}/atlassian-bamboo/WEB-INF/classes/bamboo-init.properties
+        regexp="^bamboo.home"
+        line="bamboo.home={{ installto }}/bamboo-data"
+
+    - name: Ensure mysql-jdbc connector symlinked
+      file:
+        src=/usr/share/java/mysql-connector-java.jar
+        path={{ installto }}/{{ bamboo }}-{{ bamboover }}/lib/mysql-connector-java.jar
+        state=link
+
+    - name: Ensure Bamboo database exists
+      mysql_db: name=bamboo encoding=utf8 collation=utf8_bin
+
+    - name: Ensure Bambo data user exists
+      mysql_user:
+        name={{ dbuser }}
+        password={{ dbpass }}
+        priv=bamboo.*:ALL
+        state=present
+
