@@ -8,7 +8,7 @@ This uses a [@core CentOS6 Vagrant Box](http://vntx.cc/boxes/centos65.box)
 to install Bamboo into a [Vagrant](http://vagrantup.com) instance. The playbook
 could easily be applied to any host, running anywhere.
 
-You need to [Ansible](http://ansibleworks.com) installed on your host system
+You need [Ansible](http://ansibleworks.com) installed on your host system
 before running this up.
 
 Look at
@@ -18,11 +18,10 @@ see what Ansible is doing to the base CentOS6
 
 In summary, it is installing a java JDK, mysql-server and the
 mysql-jdbc-connector RPMs, then downloading Bamboo, untarring it, and setting a
-homedir in its properties.  The Bamboo service is not started, it would be
-trivial to add a service starter as per 
-[Atlassian's instructions](https://confluence.atlassian.com/display/BAMBOO/Running+Bamboo+as+a+Linux+service). The playbook also creates a MySQL database 
-for Bamboo, the default user and password of which can be found in the playbook
-vars section at the head of the file.
+homedir in its properties.  A bamboo service is created, and started.  The
+playbook also creates a MySQL database for Bamboo, the default user and
+password of which can be found in the playbook vars section at the head of the
+file.
 
 For this simple example I've also chosen not to sit Bamboo behind Apache,
 although again, Atlassian have 
