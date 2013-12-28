@@ -44,20 +44,33 @@
         dest={{ tmp }}/bamboo.tgz
       register: fetch
 
+    - name: Ensure bamboo group exists
+      group: name={{ svcuser }} state=present
+
+    - name: Ensure bamboo user exists
+      user: name={{ svcuser }} group={{ svcuser }} state=present
+
     - name: Extract Bamboo installation
-      shell: "tar xzf {{ tmp }}/bamboo.tgz -C {{ installto }} --transform='s#\(atlassian\)-#\1/#'"
+      shell: tar xvf {{ tmp }}/bamboo.tgz -C {{ installto }} --transform='s#\(atlassian\)-#\1/#'
       when: fetch.changed
 
-    - name: Set Bamboo home
+    - name: Ensure bamboo user owns logs dir
+      file: path={{ installto }}/atlassian/bamboo-{{ bamboover }}/logs
+            owner={{ svcuser }} group={{ svcuser }} state=directory 
+
+    - name: Set Bamboo data dir
       lineinfile:
         dest={{ installto }}/atlassian/bamboo-{{ bamboover }}/atlassian-bamboo/WEB-INF/classes/bamboo-init.properties
         regexp="^bamboo.home"
         line="bamboo.home={{ datahome }}"
 
+    - name: Ensure service user can write to data dir
+      file: path={{ datahome }} owner={{ svcuser }} group={{ svcuser }} state=directory
+
     - name: Ensure mysql-jdbc connector symlinked
       file:
         src=/usr/share/java/mysql-connector-java.jar
-        path={{ installto }}/{{ bamboo }}-{{ bamboover }}/lib/mysql-connector-java.jar
+        path={{ installto }}/atlassian/bamboo-{{ bamboover }}/lib/mysql-connector-java.jar
         state=link
 
     - name: Ensure Bamboo database exists
@@ -70,14 +83,11 @@
         priv=bamboo.*:ALL
         state=present
 
-    - name: Ensure bamboo group exists
-      group: name={{ svcuser }} state=present
-
-    - name: Ensure bamboo user exists
-      user: name={{ svcuser }} group={{ svcuser }} state=present
-
     - name: Ensure Bamboo service exists
       template: src=templates/bamboo.init.j2 dest=/etc/init.d/bamboo
                 owner=root group=root mode=0755
+
+    - name: Ensure Bamboo service is set to run
+      service: name=bamboo state=started enabled=yes
 
 # vim: set ts=2 sw=2:

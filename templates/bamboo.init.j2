@@ -9,14 +9,14 @@
 # Short-Description: start and stop Bamboo service
 # Description: Bamboo CI service
 ### END INIT INFO
- 
+
 # Define some variables
 # Name of app
-APP=bamboo
+prog=bamboo
 # Name of the user to run as
-USER=bamboo
+user=bamboo
 # Location of application's bin directory
-BASE=/{{ installto }}/atlassian/bamboo-{{ bamboover }}
+base={{ installto }}/atlassian/bamboo-{{ bamboover }}
 # Location of Java JDK
 export JAVA_HOME=/usr/lib/jvm/jre
 
@@ -24,31 +24,41 @@ export JAVA_HOME=/usr/lib/jvm/jre
 . /etc/rc.d/init.d/functions
 
 # Source override configuration.
-[ -e /etc/sysconfig/$APP ] && . /etc/sysconfig/$APP
+[ -e /etc/sysconfig/$prog ] && . /etc/sysconfig/$prog
 
- 
+lockfile=/var/lock/subsys/$prog
+pidfile=/var/run/${prog}.pid
+
 case "$1" in
-  # Start command
-  start)
-    action $"Starting $APP: " /bin/false
-    /bin/su -m $USER -c "cd $BASE/logs && $BASE/bin/startup.sh &> /dev/null"
-    ;;
-  # Stop command
-  stop)
-    echo "Stopping $APP"
-    /bin/su -m $USER -c "$BASE/bin/shutdown.sh &> /dev/null"
-    echo "$APP stopped successfully"
-    ;;
-   # Restart command
-   restart)
-        $0 stop
-        sleep 5
-        $0 start
-        ;;
-  *)
-    echo "Usage: /etc/init.d/$APP {start|restart|stop}"
-    exit 1
-    ;;
+    start)
+        if [ -f $lockfile ]; then
+            # already running
+            action $"Starting $prog: " /bin/true
+        else
+            action $"Starting $prog: " /bin/su -m $user -c "$base/bin/startup.sh &> /dev/null"
+            ret=$?
+            if [ $ret -eq 0 ]; then
+                touch $lockfile
+                echo $(pgrep -f $prog) > $pidfile
+            fi
+        fi
+    ;;
+    stop)
+        action $"Stopping $prog: " /bin/su -m $user -c "$base/bin/shutdown.sh &> /dev/null"
+        ret=$?
+        if [ $ret -eq 0 ]; then
+            rm $lockfile $pidfile
+        fi
+    ;;
+    restart)
+        $0 stop
+        sleep 5
+        $0 start
+    ;;
+    *)
+        echo "Usage: /etc/init.d/$prog {start|restart|stop}"
+        exit 1
+    ;;
 esac
- 
+
 exit 0
