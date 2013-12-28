@@ -39,7 +39,7 @@ case "$1" in
             ret=$?
             if [ $ret -eq 0 ]; then
                 touch $lockfile
-                echo $(pgrep -f $prog) > $pidfile
+                echo $(pgrep -fn $prog) > $pidfile
             fi
         fi
     ;;
