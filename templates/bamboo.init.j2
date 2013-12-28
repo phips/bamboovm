@@ -1,0 +1,54 @@
+#!/bin/sh
+# bamboo startup script
+# chkconfig: 2345 80 05
+# description: Bamboo CI service
+### BEGIN INIT INFO
+# Provides: bamboo
+# Required-Start: $local_fs $remote_fs $network $named $syslog $time
+# Required-Stop: $local_fs $remote_fs $network $named $syslog $time
+# Short-Description: start and stop Bamboo service
+# Description: Bamboo CI service
+### END INIT INFO
+ 
+# Define some variables
+# Name of app
+APP=bamboo
+# Name of the user to run as
+USER=bamboo
+# Location of application's bin directory
+BASE=/{{ installto }}/atlassian/bamboo-{{ bamboover }}
+# Location of Java JDK
+export JAVA_HOME=/usr/lib/jvm/jre
+
+# Source function library.
+. /etc/rc.d/init.d/functions
+
+# Source override configuration.
+[ -e /etc/sysconfig/$APP ] && . /etc/sysconfig/$APP
+
+ 
+case "$1" in
+  # Start command
+  start)
+    action $"Starting $APP: " /bin/false
+    /bin/su -m $USER -c "cd $BASE/logs && $BASE/bin/startup.sh &> /dev/null"
+    ;;
+  # Stop command
+  stop)
+    echo "Stopping $APP"
+    /bin/su -m $USER -c "$BASE/bin/shutdown.sh &> /dev/null"
+    echo "$APP stopped successfully"
+    ;;
+   # Restart command
+   restart)
+        $0 stop
+        sleep 5
+        $0 start
+        ;;
+  *)
+    echo "Usage: /etc/init.d/$APP {start|restart|stop}"
+    exit 1
+    ;;
+esac
+ 
+exit 0

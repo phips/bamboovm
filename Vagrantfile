@@ -45,12 +45,6 @@ Vagrant.configure("2") do |config|
   # View the documentation for the provider you're using for more
   # information on available options.
 
-  # Enable provisioning with Puppet stand alone.  Puppet manifests
-  # are contained in a directory path relative to this Vagrantfile.
-  # You will need to create the manifests directory and a manifest in
-  # the file base.pp in the manifests_path directory.
-  #
-
   # provision with ansible
   config.vm.provision "ansible" do |ansible|
     ansible.playbook          = "playbook.yaml"

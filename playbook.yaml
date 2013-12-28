@@ -6,7 +6,9 @@
     bamboover: 5.3
     dlpath:    software/bamboo/downloads/binary
     tmp:       /var/tmp
-    installto: /srv
+    installto: /opt
+    datahome:  /srv/bamboo-data
+    svcuser:   bamboo
     dbuser:    bamboouser
     dbpass:    bamb00p4ss
 
@@ -43,14 +45,14 @@
       register: fetch
 
     - name: Extract Bamboo installation
-      shell: "tar xzf {{ tmp }}/bamboo.tgz -C {{ installto }}"
+      shell: "tar xzf {{ tmp }}/bamboo.tgz -C {{ installto }} --transform='s#\(atlassian\)-#\1/#'"
       when: fetch.changed
 
     - name: Set Bamboo home
       lineinfile:
-        dest={{ installto }}/{{ bamboo }}-{{ bamboover }}/atlassian-bamboo/WEB-INF/classes/bamboo-init.properties
+        dest={{ installto }}/atlassian/bamboo-{{ bamboover }}/atlassian-bamboo/WEB-INF/classes/bamboo-init.properties
         regexp="^bamboo.home"
-        line="bamboo.home={{ installto }}/bamboo-data"
+        line="bamboo.home={{ datahome }}"
 
     - name: Ensure mysql-jdbc connector symlinked
       file:
@@ -68,3 +70,8 @@
         priv=bamboo.*:ALL
         state=present
 
+    - name: Ensure Bamboo service exists
+      template: src=templates/bamboo.init.j2 dest=/etc/init.d/bamboo
+                owner=root group=root mode=0755
+
+# vim: set ts=2 sw=2:
