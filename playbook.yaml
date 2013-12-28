@@ -70,6 +70,12 @@
         priv=bamboo.*:ALL
         state=present
 
+    - name: Ensure bamboo group exists
+      group: name={{ svcuser }} state=present
+
+    - name: Ensure bamboo user exists
+      user: name={{ svcuser }} group={{ svcuser }} state=present
+
     - name: Ensure Bamboo service exists
       template: src=templates/bamboo.init.j2 dest=/etc/init.d/bamboo
                 owner=root group=root mode=0755
