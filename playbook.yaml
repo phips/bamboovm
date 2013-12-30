@@ -36,7 +36,7 @@
         - git
 
     - name: Ensure mysql server running
-      service: name=mysqld state=started
+      service: name=mysqld state=started enabled=yes
 
     - name: Fetch Bamboo install
       get_url:
