@@ -54,9 +54,9 @@
       shell: tar xvf {{ tmp }}/bamboo.tgz -C {{ installto }} --transform='s#\(atlassian\)-#\1/#'
       when: fetch.changed
 
-    - name: Ensure bamboo user owns logs dir
-      file: path={{ installto }}/atlassian/bamboo-{{ bamboover }}/logs
-            owner={{ svcuser }} group={{ svcuser }} state=directory 
+    - name: Ensure bamboo user owns bamboo dir
+      file: path={{ installto }}/atlassian/bamboo-{{ bamboover }}
+            owner={{ svcuser }} group={{ svcuser }} state=directory recurse=yes
 
     - name: Set Bamboo data dir
       lineinfile:
