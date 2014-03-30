@@ -3,7 +3,7 @@
   gather_facts: false
   vars:
     bamboo:    atlassian-bamboo
-    bamboover: 5.3
+    bamboover: 5.4
     dlpath:    software/bamboo/downloads/binary
     tmp:       /var/tmp
     installto: /opt
@@ -43,6 +43,7 @@
         url=http://www.atlassian.com/{{ dlpath }}/{{ bamboo }}-{{ bamboover }}.tar.gz
         dest={{ tmp }}/bamboo.tgz
       register: fetch
+      tags: install
 
     - name: Ensure bamboo group exists
       group: name={{ svcuser }} state=present
@@ -53,16 +54,19 @@
     - name: Extract Bamboo installation
       shell: tar xvf {{ tmp }}/bamboo.tgz -C {{ installto }} --transform='s#\(atlassian\)-#\1/#'
       when: fetch.changed
+      tags: install
 
     - name: Ensure bamboo user owns bamboo dir
       file: path={{ installto }}/atlassian/bamboo-{{ bamboover }}
             owner={{ svcuser }} group={{ svcuser }} state=directory recurse=yes
+      tags: install
 
     - name: Set Bamboo data dir
       lineinfile:
         dest={{ installto }}/atlassian/bamboo-{{ bamboover }}/atlassian-bamboo/WEB-INF/classes/bamboo-init.properties
         regexp="^bamboo.home"
         line="bamboo.home={{ datahome }}"
+      tags: install
 
     - name: Ensure service user can write to data dir
       file: path={{ datahome }} owner={{ svcuser }} group={{ svcuser }} state=directory
@@ -72,6 +76,7 @@
         src=/usr/share/java/mysql-connector-java.jar
         path={{ installto }}/atlassian/bamboo-{{ bamboover }}/lib/mysql-connector-java.jar
         state=link
+      tags: install
 
     - name: Ensure Bamboo database exists
       mysql_db: name=bamboo encoding=utf8 collation=utf8_bin
@@ -86,6 +91,13 @@
     - name: Ensure Bamboo service exists
       template: src=templates/bamboo.init.j2 dest=/etc/init.d/bamboo
                 owner=root group=root mode=0755
+      tags: install
+
+    - name: Ensure Bamboo logs symlink exists
+      file: src={{ installto }}/atlassian/bamboo-{{ bamboover }}/logs
+            path=/var/log/bamboo
+            state=link
+      tags: install
 
     - name: Ensure Bamboo service is set to run
       service: name=bamboo state=started enabled=yes
